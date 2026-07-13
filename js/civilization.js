@@ -1,5 +1,5 @@
-import { clamp, finiteOr, uid } from './utils.js?v=6.0.1';
-import { Society } from './society.js?v=6.0.1';
+import { clamp, finiteOr, uid } from './utils.js?v=6.0.2';
+import { Society } from './society.js?v=6.0.2';
 
 export const CIVILIZATION_ERAS = Object.freeze([
   Object.freeze({ key: 'origin', label: 'Origen', description: 'El linaje aprende a sobrevivir y a reconocerse.' }),
@@ -86,6 +86,9 @@ export class Civilization {
 
   update(dt, simulation) {
     if (!Number.isFinite(dt) || dt <= 0 || !simulation) return;
+    // Drena hasta dos fases sociales pendientes por paso de simulación: el pipeline social
+    // encolado en Society.update se completa así en ~7 frames en lugar de en uno solo.
+    this.society.drainPhases?.(2);
     this.timer += dt;
     if (this.timer < .75) return;
     const elapsed = this.timer;

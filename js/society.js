@@ -1,4 +1,4 @@
-import { clamp, finiteOr, uid } from './utils.js?v=6.0.1';
+import { clamp, finiteOr, uid } from './utils.js?v=6.0.2';
 
 export const GOVERNMENT_TYPES = Object.freeze({
   kinship: Object.freeze({ key: 'kinship', label: 'Círculo de Linajes', title: 'Custodio del Origen', description: 'La autoridad descansa en la memoria, la edad y la confianza directa.' }),
@@ -60,6 +60,7 @@ export class Society {
     this.lastDiplomacyYear = 0;
     this.lastIntrigueYear = 0;
     this.lastLawYear = 0;
+    this.phaseQueue = [];
   }
 
   update(dt, simulation, civilization) {
@@ -75,26 +76,47 @@ export class Society {
     const elapsedYears = this.lastUpdateYear < 0 ? .65 : Math.max(.1, year - this.lastUpdateYear);
     this.lastUpdateYear = year;
 
-    this.ensureFactions(living, civilization, simulation, year);
-    this.assignMembers(living, civilization, year);
-    this.updateFactionMetrics(living, civilization);
-    this.electFactionLeaders(living, simulation, civilization, year);
-    this.updateRelations(living, civilization, elapsedYears);
-    this.updateGovernment(living, simulation, civilization, year);
-    this.updateTreaties(year, civilization);
-    this.updateWars(living, simulation, civilization, year, elapsedYears);
-    this.maybeCreateDiplomacy(simulation, civilization, year);
-    this.maybeTriggerIntrigue(living, simulation, civilization, year);
-    this.updateLaws(simulation, civilization, year);
-    this.updateSagas(year);
+    // Troceado temporal: el pipeline social completo costaba hasta ~21 ms en un solo frame con
+    // 850 criaturas (el tirón periódico que se percibía como saturación). Las fases se encolan y
+    // se ejecutan un par por frame (drenadas desde Civilization en cada paso de simulación), en
+    // el MISMO orden y con el MISMO trabajo total. Si llega un tick nuevo antes de terminar el
+    // lote anterior (p. ej. llamadas directas en pruebas), se vacía primero para conservar la
+    // semántica secuencial.
+    this.flushPhases();
+    this.phaseQueue = [
+      () => this.ensureFactions(living, civilization, simulation, year),
+      () => this.assignMembers(living, civilization, year),
+      () => this.updateFactionMetrics(living, civilization),
+      () => this.electFactionLeaders(living, simulation, civilization, year),
+      () => this.updateRelations(living, civilization, elapsedYears),
+      () => this.updateGovernment(living, simulation, civilization, year),
+      () => this.updateTreaties(year, civilization),
+      () => this.updateWars(living, simulation, civilization, year, elapsedYears),
+      () => this.maybeCreateDiplomacy(simulation, civilization, year),
+      () => this.maybeTriggerIntrigue(living, simulation, civilization, year),
+      () => this.updateLaws(simulation, civilization, year),
+      () => this.updateSagas(year),
+      () => {
+        const activeWars = this.wars.filter(war => war.status === 'active').length;
+        const activePacts = this.treaties.filter(treaty => treaty.status === 'active').length;
+        const averageCohesion = this.factions.length ? this.factions.reduce((sum, faction) => sum + faction.cohesion, 0) / this.factions.length : .5;
+        const targetUnrest = clamp(activeWars * .17 + (1 - civilization.stability) * .38 + (1 - averageCohesion) * .25 + Math.max(0, this.factions.length - 3) * .025 - activePacts * .015, 0, 1);
+        this.unrest = smooth(this.unrest, targetUnrest, .14);
+        civilization.stability = clamp(civilization.stability + activePacts * .0015 - activeWars * .006 - this.unrest * .0018, 0, 1);
+        civilization.prosperity = clamp(civilization.prosperity - activeWars * .003 + this.getTradeTreaties().length * .0012, 0, 1);
+      }
+    ];
+    this.drainPhases(2);
+  }
 
-    const activeWars = this.wars.filter(war => war.status === 'active').length;
-    const activePacts = this.treaties.filter(treaty => treaty.status === 'active').length;
-    const averageCohesion = this.factions.length ? this.factions.reduce((sum, faction) => sum + faction.cohesion, 0) / this.factions.length : .5;
-    const targetUnrest = clamp(activeWars * .17 + (1 - civilization.stability) * .38 + (1 - averageCohesion) * .25 + Math.max(0, this.factions.length - 3) * .025 - activePacts * .015, 0, 1);
-    this.unrest = smooth(this.unrest, targetUnrest, .14);
-    civilization.stability = clamp(civilization.stability + activePacts * .0015 - activeWars * .006 - this.unrest * .0018, 0, 1);
-    civilization.prosperity = clamp(civilization.prosperity - activeWars * .003 + this.getTradeTreaties().length * .0012, 0, 1);
+  // Ejecuta hasta n fases pendientes del pipeline social. Barato cuando la cola está vacía.
+  drainPhases(n = 1) {
+    while (n-- > 0 && this.phaseQueue && this.phaseQueue.length) this.phaseQueue.shift()();
+  }
+
+  // Completa síncronamente cualquier lote pendiente (se usa antes de encolar uno nuevo).
+  flushPhases() {
+    while (this.phaseQueue && this.phaseQueue.length) this.phaseQueue.shift()();
   }
 
   syncProfiles(living, civilization, year) {

@@ -1,5 +1,5 @@
-import { CONFIG } from './config.js?v=6.0.1';
-import { chance, clamp, gaussian, rand, weightedAverage } from './utils.js?v=6.0.1';
+import { CONFIG } from './config.js?v=6.0.2';
+import { chance, clamp, gaussian, rand, weightedAverage } from './utils.js?v=6.0.2';
 
 export const GENE_LIMITS = Object.freeze({
   speed: [0.45, 2.4], vision: [55, 260], size: [2.5, 8.5], metabolism: [0.45, 1.85],

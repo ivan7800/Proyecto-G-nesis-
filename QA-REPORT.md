@@ -1,4 +1,4 @@
-# QA — Proyecto Génesis Ω v6.0.1
+# QA — Proyecto Génesis Ω v6.0.2
 
 Fecha: 13 de julio de 2026 · Node.js v22.22.2 · npm 10.9.7 · Linux (contenedor sin navegador gráfico)
 
@@ -39,3 +39,13 @@ Fecha: 13 de julio de 2026 · Node.js v22.22.2 · npm 10.9.7 · Linux (contenedo
 - Ejecución en Chromium, Firefox y WebKit reales (suite Playwright incluida y cableada al CI, no ejecutable aquí).
 - Render de píxeles, capturas en 390×844 / 768×1024 / 1440×900 / 1920×1080 (revisión estática de breakpoints y overflow en `styles.css`), gestos táctiles físicos, `prefers-reduced-motion` en navegador y ciclo real de actualización del service worker.
 - Rendimiento de FPS en GPU real (la medición de esta sesión es de CPU pura en Node).
+
+## Adenda v6.0.2 — verificación de rendimiento
+
+- `npm test`: **12/12 superadas** (se añade `performance-regression`).
+- Benchmark antes/después (Node v22, 850-858 criaturas, dt = 1/60):
+  - Media de `sim.update`: 9,57 ms → **1,95 ms/frame** (4,9×).
+  - Frames >16 ms por cada 1200: 7 → 1 · Frames >33 ms: 2 → **0** · Peor frame: 66,1 → 20,0 ms.
+  - CPU de `renderer.draw` con el mundo encajado (857 criaturas + comida): 4,69 ms/frame, ~11 000 operaciones de canvas (comida en 2 rellenos por lote).
+- Coherencia de la simulación tras optimizar (misma sesión): 6 facciones, gobierno federación con gobernante, sagas y leyes emergen; estados de comportamiento diversos (buscar alimento, ayudar, investigar, descansar, buscar pareja, imitar, crear, recordar); cola de fases social siempre drenada.
+- Limitación: las cifras son de CPU pura en Node; los FPS reales en GPU/navegador no se han podido medir en este entorno (sin navegador disponible).

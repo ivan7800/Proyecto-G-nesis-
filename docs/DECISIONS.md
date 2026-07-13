@@ -17,3 +17,13 @@ El `LegacyEngine` limita los perfiles a 1800 para acotar la memoria. La versión
 ### Lockfile solo contra el registro público
 
 `package-lock.json` debe resolver exclusivamente contra `registry.npmjs.org`. Cualquier regeneración desde entornos con registro corporativo debe revisarse antes de publicar, porque el CI ejecuta `npm ci` y fallaría en silencio para cualquier colaborador externo.
+
+## v6.0.2
+
+### Percepción social a la cadencia del sensado
+
+La lista de vecinos ya se refrescaba cada `senseInterval` (~0,26 s con población alta), pero la selección de candidatos sobre esa lista estale se repetía en cada paso de simulación. Mover la selección al momento del sensado conserva la semántica (misma información, misma cadencia de refresco) y elimina el coste dominante. Las posiciones de los candidatos se leen en vivo al decidir el rumbo y su validez se revalida al usarlos; `reproduce` y `consumeFood` ya revalidaban todas sus condiciones.
+
+### Troceado del pipeline social, no reescritura
+
+El pipeline de la sociedad costaba hasta ~21 ms en un único frame. En lugar de reescribir sus subrutinas, se encolan en su orden original y se drenan un par por frame: mismo trabajo total repartido en ~7 frames (~120 ms), invisible a la escala de un tick social (~12 s). Un tick nuevo con lote pendiente lo vacía síncronamente primero, de modo que las llamadas directas (pruebas) conservan la semántica secuencial.

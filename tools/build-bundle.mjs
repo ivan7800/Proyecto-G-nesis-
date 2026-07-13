@@ -16,7 +16,7 @@ for (const file of files) {
   parts.push(`\n/* ===== ${file} ===== */\n${source.trim()}\n`);
 }
 
-const banner = `/* Proyecto Génesis Ω v6.0.1 — Grandes Proyectos bundle generado. No editar directamente. */\n`;
+const banner = `/* Proyecto Génesis Ω v6.0.2 — Grandes Proyectos bundle generado. No editar directamente. */\n`;
 const bundle = `${banner}(() => {\n'use strict';\n${parts.join('\n')}\n})();\n`;
 await writeFile(resolve(root, 'js', 'app.bundle.js'), bundle, 'utf8');
 console.log('Bundle generado:', resolve(root, 'js', 'app.bundle.js'));

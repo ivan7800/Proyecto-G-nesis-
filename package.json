@@ -1,13 +1,13 @@
 {
   "name": "proyecto-genesis-omega",
-  "version": "6.0.1",
+  "version": "6.0.2",
   "description": "Laboratorio local de civilización artificial retro con Grandes Proyectos, equipos especializados, fallos, aprendizaje, entregas y legado emergente.",
   "main": "sw.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/project-integrity.mjs && node tests/simulation-smoke.mjs && node tests/workshop-smoke.mjs && node tests/civilization-smoke.mjs && node tests/society-smoke.mjs && node tests/legacy-smoke.mjs && node tests/legacy-profiles-regression.mjs && node tests/grand-projects-smoke.mjs && node tests/archetypes-check.mjs && node tests/visual-perf-check.mjs && node tests/dom-boot.mjs",
+    "test": "node tests/project-integrity.mjs && node tests/simulation-smoke.mjs && node tests/workshop-smoke.mjs && node tests/civilization-smoke.mjs && node tests/society-smoke.mjs && node tests/legacy-smoke.mjs && node tests/legacy-profiles-regression.mjs && node tests/performance-regression.mjs && node tests/grand-projects-smoke.mjs && node tests/archetypes-check.mjs && node tests/visual-perf-check.mjs && node tests/dom-boot.mjs",
     "build": "node tools/build-bundle.mjs",
     "test:e2e": "playwright test"
   },

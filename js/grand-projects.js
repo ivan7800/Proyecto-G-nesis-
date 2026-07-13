@@ -1,7 +1,7 @@
-import { CONFIG } from './config.js?v=6.0.1';
-import { SKILLS, deriveSkill } from './workshop.js?v=6.0.1';
-import { clamp, finiteOr, uid } from './utils.js?v=6.0.1';
-import { sanitizeCollectivePrompt } from './knowledge.js?v=6.0.1';
+import { CONFIG } from './config.js?v=6.0.2';
+import { SKILLS, deriveSkill } from './workshop.js?v=6.0.2';
+import { clamp, finiteOr, uid } from './utils.js?v=6.0.2';
+import { sanitizeCollectivePrompt } from './knowledge.js?v=6.0.2';
 
 export const GRAND_PROJECT_TYPES = Object.freeze({
   software: Object.freeze({ label: 'Software o aplicación', icon: '⌘', defaultTitle: 'Sistema Ω', summary: 'Diseñar una aplicación funcional, verificable y documentada.' }),

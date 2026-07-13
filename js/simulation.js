@@ -1,13 +1,13 @@
-import { BIOMES, CONFIG } from './config.js?v=6.0.1';
-import { Creature, combineAppearances, inheritKnowledge } from './creature.js?v=6.0.1';
-import { combineGenomes, geneticDistance, mutateGenome, randomGenome, sanitizeGenome } from './genetics.js?v=6.0.1';
-import { SpatialGrid } from './spatial-grid.js?v=6.0.1';
-import { Workshop, deriveSkill } from './workshop.js?v=6.0.1';
-import { KNOWLEDGE_ATLAS, atlasRecordByKey, atlasRecordsForSkill, sanitizeCollectivePrompt } from './knowledge.js?v=6.0.1';
-import { Civilization } from './civilization.js?v=6.0.1';
-import { LegacyEngine } from './legacy.js?v=6.0.1';
-import { GrandProjectEngine } from './grand-projects.js?v=6.0.1';
-import { chance, clamp, distanceSq, finiteOr, rand, randInt, uid } from './utils.js?v=6.0.1';
+import { BIOMES, CONFIG } from './config.js?v=6.0.2';
+import { Creature, combineAppearances, inheritKnowledge } from './creature.js?v=6.0.2';
+import { combineGenomes, geneticDistance, mutateGenome, randomGenome, sanitizeGenome } from './genetics.js?v=6.0.2';
+import { SpatialGrid } from './spatial-grid.js?v=6.0.2';
+import { Workshop, deriveSkill } from './workshop.js?v=6.0.2';
+import { KNOWLEDGE_ATLAS, atlasRecordByKey, atlasRecordsForSkill, sanitizeCollectivePrompt } from './knowledge.js?v=6.0.2';
+import { Civilization } from './civilization.js?v=6.0.2';
+import { LegacyEngine } from './legacy.js?v=6.0.2';
+import { GrandProjectEngine } from './grand-projects.js?v=6.0.2';
+import { chance, clamp, distanceSq, finiteOr, rand, randInt, uid } from './utils.js?v=6.0.2';
 
 export class Simulation {
   constructor() {
@@ -216,6 +216,12 @@ export class Simulation {
   }
 
   getCollectiveMetrics() {
+    // Caché breve: recorrer todas las criaturas y su conocimiento cuesta hasta ~8 ms con
+    // población máxima, y lo llaman la civilización (cada 0,75 s), la UI (cada ~1 s) y el
+    // aprendizaje. Los valores son agregados suavizados: 0,35 s de antigüedad es invisible.
+    if (this._metricsCache && this.time - this._metricsCache.at < .35 && this._metricsCache.pop === this.creatures.length) {
+      return this._metricsCache.value;
+    }
     const living = this.creatures.filter(creature => creature && !creature.dead);
     const roles = new Set(living.map(creature => deriveSkill(creature)));
     const keys = new Set(this.collective.unlockedKeys);
@@ -224,11 +230,13 @@ export class Simulation {
     const collaborations = living.reduce((sum, creature) => sum + Math.max(0, finiteOr(creature.experience?.collaborations, 0)), 0);
     const synergy = clamp((Math.log2(living.length + 1) * .14 + roles.size * .035 + Math.sqrt(collaborations) * .025) * this.autonomyLevel, 0, 1);
     const index = Math.round(Math.min(999, 18 + Math.log2(living.length + 1) * 24 + roles.size * 9 + Math.sqrt(keys.size) * 8 + Math.sqrt(collaborations) * 5 + this.workshop.obras.length * 2));
-    return {
+    const value = {
       population: living.length, roles: roles.size, uniqueKnowledge: keys.size, domains: domains.size,
       synergy, index, queuedProjects: this.workshop.requests.length, activeTeams: this.workshop.teams.filter(team => !team.dissolved).length,
       completedProjects: this.collective.completedProjects
     };
+    this._metricsCache = { at: this.time, pop: this.creatures.length, value };
+    return value;
   }
 
   getMutationPressure(multiplier = 1) {

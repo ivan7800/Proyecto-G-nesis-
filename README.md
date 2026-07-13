@@ -1,4 +1,4 @@
-# Proyecto Génesis Ω v6.0.1 — Grandes Proyectos
+# Proyecto Génesis Ω v6.0.2 — Grandes Proyectos
 
 Proyecto Génesis Ω es un laboratorio local de vida y civilización artificial. Todo comienza con un único huevo, Ω-001. La población aprende, hereda, se especializa, forma facciones, crea cultura, deja legado y ahora puede coordinarse alrededor de objetivos complejos mediante **Gran Proyecto Ω**.
 

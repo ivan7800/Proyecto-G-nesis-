@@ -1,7 +1,7 @@
-import { APP_VERSION, CONFIG } from './config.js?v=6.0.1';
-import { Renderer } from './renderer.js?v=6.0.1';
-import { Simulation } from './simulation.js?v=6.0.1';
-import { UI } from './ui.js?v=6.0.1';
+import { APP_VERSION, CONFIG } from './config.js?v=6.0.2';
+import { Renderer } from './renderer.js?v=6.0.2';
+import { Simulation } from './simulation.js?v=6.0.2';
+import { UI } from './ui.js?v=6.0.2';
 
 let simulation = null;
 let renderer = null;
