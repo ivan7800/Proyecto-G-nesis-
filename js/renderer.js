@@ -1,6 +1,6 @@
-import { BIOMES, CONFIG } from './config.js?v=6.0.1';
-import { clamp, hsl } from './utils.js?v=6.0.1';
-import { paintEldritchSprite, drawEldritchMicro, archetypeFor, archetypeName } from './eldritch-sprites.js?v=6.0.1';
+import { BIOMES, CONFIG } from './config.js?v=6.0.2';
+import { clamp, hsl } from './utils.js?v=6.0.2';
+import { paintEldritchSprite, drawEldritchMicro, archetypeFor, archetypeName } from './eldritch-sprites.js?v=6.0.2';
 
 const BIOME_PALETTES = Object.freeze({
   origin: { outer: '#03070c', a: '#102234', b: '#07121c', c: '#03070b', line: '98,220,255', accent: '120,200,255' },
@@ -516,19 +516,31 @@ export class Renderer {
   }
 
   drawFood(ctx) {
+    // Lote único: con el mundo encajado puede haber más de 2000 recursos visibles. Antes cada
+    // uno costaba beginPath+arc+fill (y otro par para el halo): miles de operaciones de canvas
+    // por frame. Como el color de relleno es constante, todos los círculos van en un solo path
+    // y un solo fill; el halo, en un segundo path. El pulso individual se conserva.
+    const drawHalo = this.camera.zoom > .55;
+    ctx.beginPath();
     for (const resource of this.simulation.food) {
       if (!resource || !Number.isFinite(resource.x) || !Number.isFinite(resource.y) || !this.isVisible(resource.x, resource.y, 20)) continue;
       const pulse = 1 + Math.sin(this.simulation.time * 3 + resource.x) * .16;
+      const r = Math.max(.5, resource.radius * pulse);
+      ctx.moveTo(resource.x + r, resource.y);
+      ctx.arc(resource.x, resource.y, r, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = 'rgba(95,240,183,.75)';
+    ctx.fill();
+    if (drawHalo) {
       ctx.beginPath();
-      ctx.arc(resource.x, resource.y, Math.max(.5, resource.radius * pulse), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(95,240,183,.75)';
-      ctx.fill();
-      if (this.camera.zoom > .55) {
-        ctx.beginPath();
-        ctx.arc(resource.x, resource.y, resource.radius * 2.8, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(95,240,183,.05)';
-        ctx.fill();
+      for (const resource of this.simulation.food) {
+        if (!resource || !Number.isFinite(resource.x) || !Number.isFinite(resource.y) || !this.isVisible(resource.x, resource.y, 20)) continue;
+        const r = resource.radius * 2.8;
+        ctx.moveTo(resource.x + r, resource.y);
+        ctx.arc(resource.x, resource.y, r, 0, Math.PI * 2);
       }
+      ctx.fillStyle = 'rgba(95,240,183,.05)';
+      ctx.fill();
     }
   }
 

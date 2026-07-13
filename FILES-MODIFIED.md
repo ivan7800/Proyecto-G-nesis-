@@ -1,4 +1,4 @@
-# Archivos modificados — v6.0.1
+# Archivos modificados — v6.0.1 y v6.0.2
 
 ## Modificados
 
@@ -19,3 +19,18 @@
 ## Eliminados
 
 - Ninguno. No se ha retirado ningún sistema, función ni compatibilidad de guardado.
+
+## v6.0.2
+
+### Modificados
+
+- `js/creature.js`: caché de `directiveSet()` con invalidación en `learnKnowledge`; la selección de amenaza/pareja/amistad/pariente vulnerable se mueve a `refreshSocialPercepts()` (cadencia del sensado) con revalidación de candidatos al usarlos y distancias frescas en los contactos.
+- `js/society.js`: el pipeline social (13 fases) se encola en su orden original y se drena por frames (`drainPhases`/`flushPhases`); `reset()` inicializa la cola.
+- `js/civilization.js`: drena hasta dos fases sociales pendientes en cada paso de simulación.
+- `js/simulation.js`: caché TTL (0,35 s) para `getCollectiveMetrics`.
+- `js/renderer.js`: `drawFood` batchea todos los círculos en dos rellenos.
+- `package.json`, versión y suite; bundle regenerado; documentación actualizada.
+
+### Añadidos
+
+- `tests/performance-regression.mjs`.

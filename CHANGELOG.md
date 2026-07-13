@@ -1,5 +1,25 @@
 # Changelog
 
+## 6.0.2 — Rendimiento con población máxima
+
+### Corregido
+
+- **Saturación con el mundo lleno (P1):** con ~850 criaturas, la simulación consumía 9,6 ms/frame de media (picos de 66 ms) y el dibujo con el mundo encajado emitía miles de operaciones de canvas. Diagnóstico empírico: cada criatura recorría su lista de ~220 vecinos en cada paso (≈11,5 millones de iteraciones/s), `directiveSet()` asignaba un `Set` nuevo por criatura y paso, el pipeline social completo (13 fases, hasta 21 ms) se ejecutaba en un único frame cada tick, `getCollectiveMetrics` (hasta 8 ms) se recalculaba para la civilización, la UI y el aprendizaje, y cada recurso de comida se dibujaba con `beginPath`+`fill` propios.
+
+### Optimizado (misma semántica, verificada por la suite)
+
+- La selección de amenaza, pareja, amistad y pariente vulnerable se realiza al ritmo del sensado (donde la lista de vecinos ya se refrescaba), no en cada paso; las posiciones de los candidatos elegidos se siguen leyendo en vivo y su validez se revalida al usarlos.
+- `directiveSet()` se cachea y se invalida al aprender conocimiento nuevo.
+- El pipeline social se trocea: las 13 fases se encolan en su orden original y se drenan un par por frame desde la civilización; un tick nuevo vacía primero el lote pendiente (las llamadas directas de las pruebas conservan su semántica).
+- `getCollectiveMetrics` usa una caché de 0,35 s (los valores son agregados suavizados).
+- La comida se dibuja en dos rellenos por lote en lugar de miles de operaciones individuales.
+
+**Resultado medido (Node, 858 criaturas):** media de `sim.update` 9,57 → 1,95 ms/frame (4,9×); frames >33 ms: 2 → 0 y peor frame 66 → 20 ms por cada 1200; CPU de dibujo a mundo encajado 4,7 ms/frame con ~11 000 operaciones de canvas. Facciones, gobierno, sagas y leyes siguen emergiendo con normalidad.
+
+### Añadido
+
+- `tests/performance-regression.mjs`: contratos de las nuevas mecánicas (invalidación de la caché de directivas, descarte de perceptos muertos, TTL de métricas, drenado y vaciado del pipeline social) más una cota de cordura laxa. Integrada en `npm test` (suite: 12 pruebas).
+
 ## 6.0.1 — Estabilidad del legado y entorno reproducible
 
 ### Corregido

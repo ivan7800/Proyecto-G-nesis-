@@ -1,9 +1,9 @@
-/* Proyecto Génesis Ω v6.0.1 — Grandes Proyectos bundle generado. No editar directamente. */
+/* Proyecto Génesis Ω v6.0.2 — Grandes Proyectos bundle generado. No editar directamente. */
 (() => {
 'use strict';
 
 /* ===== config.js ===== */
-const APP_VERSION = '6.0.1';
+const APP_VERSION = '6.0.2';
 
 const BIOMES = Object.freeze({
   origin: Object.freeze({
@@ -1490,6 +1490,7 @@ class Society {
     this.lastDiplomacyYear = 0;
     this.lastIntrigueYear = 0;
     this.lastLawYear = 0;
+    this.phaseQueue = [];
   }
 
   update(dt, simulation, civilization) {
@@ -1505,26 +1506,47 @@ class Society {
     const elapsedYears = this.lastUpdateYear < 0 ? .65 : Math.max(.1, year - this.lastUpdateYear);
     this.lastUpdateYear = year;
 
-    this.ensureFactions(living, civilization, simulation, year);
-    this.assignMembers(living, civilization, year);
-    this.updateFactionMetrics(living, civilization);
-    this.electFactionLeaders(living, simulation, civilization, year);
-    this.updateRelations(living, civilization, elapsedYears);
-    this.updateGovernment(living, simulation, civilization, year);
-    this.updateTreaties(year, civilization);
-    this.updateWars(living, simulation, civilization, year, elapsedYears);
-    this.maybeCreateDiplomacy(simulation, civilization, year);
-    this.maybeTriggerIntrigue(living, simulation, civilization, year);
-    this.updateLaws(simulation, civilization, year);
-    this.updateSagas(year);
+    // Troceado temporal: el pipeline social completo costaba hasta ~21 ms en un solo frame con
+    // 850 criaturas (el tirón periódico que se percibía como saturación). Las fases se encolan y
+    // se ejecutan un par por frame (drenadas desde Civilization en cada paso de simulación), en
+    // el MISMO orden y con el MISMO trabajo total. Si llega un tick nuevo antes de terminar el
+    // lote anterior (p. ej. llamadas directas en pruebas), se vacía primero para conservar la
+    // semántica secuencial.
+    this.flushPhases();
+    this.phaseQueue = [
+      () => this.ensureFactions(living, civilization, simulation, year),
+      () => this.assignMembers(living, civilization, year),
+      () => this.updateFactionMetrics(living, civilization),
+      () => this.electFactionLeaders(living, simulation, civilization, year),
+      () => this.updateRelations(living, civilization, elapsedYears),
+      () => this.updateGovernment(living, simulation, civilization, year),
+      () => this.updateTreaties(year, civilization),
+      () => this.updateWars(living, simulation, civilization, year, elapsedYears),
+      () => this.maybeCreateDiplomacy(simulation, civilization, year),
+      () => this.maybeTriggerIntrigue(living, simulation, civilization, year),
+      () => this.updateLaws(simulation, civilization, year),
+      () => this.updateSagas(year),
+      () => {
+        const activeWars = this.wars.filter(war => war.status === 'active').length;
+        const activePacts = this.treaties.filter(treaty => treaty.status === 'active').length;
+        const averageCohesion = this.factions.length ? this.factions.reduce((sum, faction) => sum + faction.cohesion, 0) / this.factions.length : .5;
+        const targetUnrest = clamp(activeWars * .17 + (1 - civilization.stability) * .38 + (1 - averageCohesion) * .25 + Math.max(0, this.factions.length - 3) * .025 - activePacts * .015, 0, 1);
+        this.unrest = smooth(this.unrest, targetUnrest, .14);
+        civilization.stability = clamp(civilization.stability + activePacts * .0015 - activeWars * .006 - this.unrest * .0018, 0, 1);
+        civilization.prosperity = clamp(civilization.prosperity - activeWars * .003 + this.getTradeTreaties().length * .0012, 0, 1);
+      }
+    ];
+    this.drainPhases(2);
+  }
 
-    const activeWars = this.wars.filter(war => war.status === 'active').length;
-    const activePacts = this.treaties.filter(treaty => treaty.status === 'active').length;
-    const averageCohesion = this.factions.length ? this.factions.reduce((sum, faction) => sum + faction.cohesion, 0) / this.factions.length : .5;
-    const targetUnrest = clamp(activeWars * .17 + (1 - civilization.stability) * .38 + (1 - averageCohesion) * .25 + Math.max(0, this.factions.length - 3) * .025 - activePacts * .015, 0, 1);
-    this.unrest = smooth(this.unrest, targetUnrest, .14);
-    civilization.stability = clamp(civilization.stability + activePacts * .0015 - activeWars * .006 - this.unrest * .0018, 0, 1);
-    civilization.prosperity = clamp(civilization.prosperity - activeWars * .003 + this.getTradeTreaties().length * .0012, 0, 1);
+  // Ejecuta hasta n fases pendientes del pipeline social. Barato cuando la cola está vacía.
+  drainPhases(n = 1) {
+    while (n-- > 0 && this.phaseQueue && this.phaseQueue.length) this.phaseQueue.shift()();
+  }
+
+  // Completa síncronamente cualquier lote pendiente (se usa antes de encolar uno nuevo).
+  flushPhases() {
+    while (this.phaseQueue && this.phaseQueue.length) this.phaseQueue.shift()();
   }
 
   syncProfiles(living, civilization, year) {
@@ -2319,6 +2341,9 @@ class Civilization {
 
   update(dt, simulation) {
     if (!Number.isFinite(dt) || dt <= 0 || !simulation) return;
+    // Drena hasta dos fases sociales pendientes por paso de simulación: el pipeline social
+    // encolado en Society.update se completa así en ~7 frames en lugar de en uno solo.
+    this.society.drainPhases?.(2);
     this.timer += dt;
     if (this.timer < .75) return;
     const elapsed = this.timer;
@@ -3829,6 +3854,7 @@ class Creature {
     this.senseTimer = 0;
     this.sensedFood = [];
     this.sensedCreatures = [];
+    this.percepts = null;
   }
 
   get radius() { return this.genome.size; }
@@ -3885,6 +3911,13 @@ class Creature {
       const socialRange = this.age > this.maturity ? vision * 2.6 : vision * .9;
       this.sensedFood = simulation.foodGrid.query(this.x, this.y, vision);
       this.sensedCreatures = simulation.creatureGrid.query(this.x, this.y, socialRange);
+      // La selección de candidatos sociales se hace aquí, al ritmo del sensado (~0,26 s con
+      // población alta), no en cada paso de simulación. Antes, cada criatura recorría su lista
+      // de vecinos (media de ~220 con 850 criaturas) unas 60 veces por segundo: ~11,5 millones
+      // de iteraciones/s solo en este bucle. La lista ya era estale entre sensados, así que
+      // seleccionar sobre ella con la misma cadencia no cambia la semántica; las posiciones de
+      // los candidatos elegidos sí se leen en vivo al decidir el rumbo.
+      this.refreshSocialPercepts(g, directives);
       this.senseTimer = simulation.senseInterval * (.7 + ((this.id.charCodeAt(0) + this.id.charCodeAt(this.id.length - 1)) % 13) / 20);
     }
 
@@ -3896,30 +3929,12 @@ class Creature {
       if (score < bestFoodScore) { bestFoodScore = score; targetFood = food; }
     }
 
-    let threat = null;
-    let mate = null;
-    let friend = null;
-    let vulnerableKin = null;
-    let threatD2 = Infinity;
-    let mateD2 = Infinity;
-    let friendD2 = Infinity;
-    let vulnerableD2 = Infinity;
-    const caution = directives.has('flee_early') ? 1.02 : 1.18;
-    const aggressionLimit = directives.has('avoid_conflict') ? .46 : .62;
-    const threatRange = (vision * .72) ** 2;
-    for (const other of this.sensedCreatures) {
-      if (!other || other === this || other.dead) continue;
-      const d2 = distanceSq(this, other);
-      const sameSpecies = other.speciesId === this.speciesId;
-      if (d2 < threatRange && d2 < threatD2 && other.genome.size > g.size * caution && other.genome.aggression > aggressionLimit) {
-        threat = other; threatD2 = d2;
-      }
-      if (sameSpecies && d2 < friendD2) { friend = other; friendD2 = d2; }
-      if (sameSpecies && other.energy < other.maxEnergy * .28 && d2 < vulnerableD2) { vulnerableKin = other; vulnerableD2 = d2; }
-      if (sameSpecies && d2 < mateD2 && other.age > other.maturity && other.energy > other.maxEnergy * .63 && other.reproductionCooldown <= 0) {
-        mate = other; mateD2 = d2;
-      }
-    }
+    // Revalidación barata de los candidatos elegidos en el último sensado.
+    const percepts = this.percepts;
+    const threat = percepts && percepts.threat && !percepts.threat.dead ? percepts.threat : null;
+    const friend = percepts && percepts.friend && !percepts.friend.dead ? percepts.friend : null;
+    const vulnerableKin = percepts && percepts.vulnerableKin && !percepts.vulnerableKin.dead ? percepts.vulnerableKin : null;
+    const mate = percepts && percepts.mate && !percepts.mate.dead && percepts.mate.reproductionCooldown <= 0 ? percepts.mate : null;
 
     if (this.innerTimer <= 0) {
       this.refreshMind(simulation, { threat, targetFood, mate, friend, vulnerableKin });
@@ -3948,7 +3963,7 @@ class Creature {
       this.state = 'ayudar';
       this.goal = `ayudar a ${vulnerableKin.name}`;
       desiredAngle = angleTo(this, vulnerableKin);
-      if (vulnerableD2 < (this.visualRadius + vulnerableKin.visualRadius + 18) ** 2) {
+      if (distanceSq(this, vulnerableKin) < (this.visualRadius + vulnerableKin.visualRadius + 18) ** 2) {
         const gift = Math.min(14, Math.max(0, this.energy - this.maxEnergy * .66));
         if (gift > 2) {
           this.energy -= gift;
@@ -3971,7 +3986,7 @@ class Creature {
       this.goal = `fortalecer vínculo con ${friend.name}`;
       desiredAngle = angleTo(this, friend);
       speedFactor = .72;
-      if (friendD2 < (this.visualRadius + friend.visualRadius + 28) ** 2) {
+      if (distanceSq(this, friend) < (this.visualRadius + friend.visualRadius + 28) ** 2) {
         this.bond = clamp(this.bond + dt * .016, 0, 1);
         friend.bond = clamp(friend.bond + dt * .012, 0, 1);
         this.strengthenRelationship(friend.id, dt * .04);
@@ -4023,6 +4038,32 @@ class Creature {
     if (this.y < 0 || this.y > CONFIG.WORLD_HEIGHT) { this.angle = -this.angle; this.y = clamp(this.y, 0, CONFIG.WORLD_HEIGHT); }
 
     if (targetFood && distanceSq(this, targetFood) < (this.radius + targetFood.radius + 3) ** 2) simulation.consumeFood(this, targetFood);
+  }
+
+  // Selecciona amenaza, pareja, amistad y pariente vulnerable a partir de la última lectura
+  // sensorial. Se ejecuta con la cadencia del sensado, no en cada paso: la lista de vecinos ya
+  // era estale entre sensados, de modo que la selección conserva la misma semántica con una
+  // fracción del coste. Los criterios son exactamente los del bucle original.
+  refreshSocialPercepts(g, directives) {
+    let threat = null, mate = null, friend = null, vulnerableKin = null;
+    let threatD2 = Infinity, mateD2 = Infinity, friendD2 = Infinity, vulnerableD2 = Infinity;
+    const caution = directives.has('flee_early') ? 1.02 : 1.18;
+    const aggressionLimit = directives.has('avoid_conflict') ? .46 : .62;
+    const threatRange = (g.vision * .72) ** 2;
+    for (const other of this.sensedCreatures) {
+      if (!other || other === this || other.dead) continue;
+      const d2 = distanceSq(this, other);
+      const sameSpecies = other.speciesId === this.speciesId;
+      if (d2 < threatRange && d2 < threatD2 && other.genome.size > g.size * caution && other.genome.aggression > aggressionLimit) {
+        threat = other; threatD2 = d2;
+      }
+      if (sameSpecies && d2 < friendD2) { friend = other; friendD2 = d2; }
+      if (sameSpecies && other.energy < other.maxEnergy * .28 && d2 < vulnerableD2) { vulnerableKin = other; vulnerableD2 = d2; }
+      if (sameSpecies && d2 < mateD2 && other.age > other.maturity && other.energy > other.maxEnergy * .63 && other.reproductionCooldown <= 0) {
+        mate = other; mateD2 = d2;
+      }
+    }
+    this.percepts = { threat, mate, friend, vulnerableKin };
   }
 
   refreshMind(simulation, context = {}) {
@@ -4105,7 +4146,12 @@ class Creature {
   }
 
   directiveSet() {
-    return new Set(this.knowledge.filter(item => item.kind === 'directive').map(item => item.key));
+    // Caché: se reconstruye solo cuando cambia el conocimiento (learnKnowledge).
+    // Antes se creaba un Set nuevo por criatura y por paso: ~50k asignaciones/s con 850 criaturas.
+    if (!this._directives) {
+      this._directives = new Set(this.knowledge.filter(item => item.kind === 'directive').map(item => item.key));
+    }
+    return this._directives;
   }
 
   remember(type, x, y, capacity) {
@@ -4131,6 +4177,7 @@ class Creature {
     this.knowledge.push(clean);
     const max = Math.max(8, Math.round(8 + this.genome.memory * 22));
     if (this.knowledge.length > max) this.knowledge.splice(0, this.knowledge.length - max);
+    this._directives = null;
     return true;
   }
 
@@ -4590,6 +4637,12 @@ class Simulation {
   }
 
   getCollectiveMetrics() {
+    // Caché breve: recorrer todas las criaturas y su conocimiento cuesta hasta ~8 ms con
+    // población máxima, y lo llaman la civilización (cada 0,75 s), la UI (cada ~1 s) y el
+    // aprendizaje. Los valores son agregados suavizados: 0,35 s de antigüedad es invisible.
+    if (this._metricsCache && this.time - this._metricsCache.at < .35 && this._metricsCache.pop === this.creatures.length) {
+      return this._metricsCache.value;
+    }
     const living = this.creatures.filter(creature => creature && !creature.dead);
     const roles = new Set(living.map(creature => deriveSkill(creature)));
     const keys = new Set(this.collective.unlockedKeys);
@@ -4598,11 +4651,13 @@ class Simulation {
     const collaborations = living.reduce((sum, creature) => sum + Math.max(0, finiteOr(creature.experience?.collaborations, 0)), 0);
     const synergy = clamp((Math.log2(living.length + 1) * .14 + roles.size * .035 + Math.sqrt(collaborations) * .025) * this.autonomyLevel, 0, 1);
     const index = Math.round(Math.min(999, 18 + Math.log2(living.length + 1) * 24 + roles.size * 9 + Math.sqrt(keys.size) * 8 + Math.sqrt(collaborations) * 5 + this.workshop.obras.length * 2));
-    return {
+    const value = {
       population: living.length, roles: roles.size, uniqueKnowledge: keys.size, domains: domains.size,
       synergy, index, queuedProjects: this.workshop.requests.length, activeTeams: this.workshop.teams.filter(team => !team.dissolved).length,
       completedProjects: this.collective.completedProjects
     };
+    this._metricsCache = { at: this.time, pop: this.creatures.length, value };
+    return value;
   }
 
   getMutationPressure(multiplier = 1) {
@@ -6098,19 +6153,31 @@ class Renderer {
   }
 
   drawFood(ctx) {
+    // Lote único: con el mundo encajado puede haber más de 2000 recursos visibles. Antes cada
+    // uno costaba beginPath+arc+fill (y otro par para el halo): miles de operaciones de canvas
+    // por frame. Como el color de relleno es constante, todos los círculos van en un solo path
+    // y un solo fill; el halo, en un segundo path. El pulso individual se conserva.
+    const drawHalo = this.camera.zoom > .55;
+    ctx.beginPath();
     for (const resource of this.simulation.food) {
       if (!resource || !Number.isFinite(resource.x) || !Number.isFinite(resource.y) || !this.isVisible(resource.x, resource.y, 20)) continue;
       const pulse = 1 + Math.sin(this.simulation.time * 3 + resource.x) * .16;
+      const r = Math.max(.5, resource.radius * pulse);
+      ctx.moveTo(resource.x + r, resource.y);
+      ctx.arc(resource.x, resource.y, r, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = 'rgba(95,240,183,.75)';
+    ctx.fill();
+    if (drawHalo) {
       ctx.beginPath();
-      ctx.arc(resource.x, resource.y, Math.max(.5, resource.radius * pulse), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(95,240,183,.75)';
-      ctx.fill();
-      if (this.camera.zoom > .55) {
-        ctx.beginPath();
-        ctx.arc(resource.x, resource.y, resource.radius * 2.8, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(95,240,183,.05)';
-        ctx.fill();
+      for (const resource of this.simulation.food) {
+        if (!resource || !Number.isFinite(resource.x) || !Number.isFinite(resource.y) || !this.isVisible(resource.x, resource.y, 20)) continue;
+        const r = resource.radius * 2.8;
+        ctx.moveTo(resource.x + r, resource.y);
+        ctx.arc(resource.x, resource.y, r, 0, Math.PI * 2);
       }
+      ctx.fillStyle = 'rgba(95,240,183,.05)';
+      ctx.fill();
     }
   }
 

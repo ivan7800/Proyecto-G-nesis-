@@ -1,8 +1,8 @@
-const CACHE = 'genesis-omega-v6.0.1';
+const CACHE = 'genesis-omega-v6.0.2';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=6.0.1', './manifest.webmanifest?v=6.0.1',
+  './', './index.html', './styles.css?v=6.0.2', './manifest.webmanifest?v=6.0.2',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
-  './js/app.bundle.js?v=6.0.1'
+  './js/app.bundle.js?v=6.0.2'
 ];
 
 self.addEventListener('install', event => {

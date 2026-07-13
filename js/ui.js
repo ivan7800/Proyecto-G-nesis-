@@ -1,11 +1,11 @@
-import { BIOMES, CONFIG, GENE_LABELS } from './config.js?v=6.0.1';
-import { formatNumber, hsl, downloadJSON } from './utils.js?v=6.0.1';
-import { clearSavedWorld, deleteSlot, getStats, listSlots, loadWorld, recordStats, saveWorld } from './storage.js?v=6.0.1';
-import { SKILLS, deriveSkill, obraToFile, collectionToFile, OBRA_META } from './workshop.js?v=6.0.1';
-import { randomGenome } from './genetics.js?v=6.0.1';
-import { archetypeFor, archetypeName } from './eldritch-sprites.js?v=6.0.1';
-import { TECHNOLOGY_TREE } from './civilization.js?v=6.0.1';
-import { GRAND_PROJECT_TYPES } from './grand-projects.js?v=6.0.1';
+import { BIOMES, CONFIG, GENE_LABELS } from './config.js?v=6.0.2';
+import { formatNumber, hsl, downloadJSON } from './utils.js?v=6.0.2';
+import { clearSavedWorld, deleteSlot, getStats, listSlots, loadWorld, recordStats, saveWorld } from './storage.js?v=6.0.2';
+import { SKILLS, deriveSkill, obraToFile, collectionToFile, OBRA_META } from './workshop.js?v=6.0.2';
+import { randomGenome } from './genetics.js?v=6.0.2';
+import { archetypeFor, archetypeName } from './eldritch-sprites.js?v=6.0.2';
+import { TECHNOLOGY_TREE } from './civilization.js?v=6.0.2';
+import { GRAND_PROJECT_TYPES } from './grand-projects.js?v=6.0.2';
 
 const TOOL_COPY = Object.freeze({
   inspect: ['Inspeccionar', 'Pulsa sobre una criatura para ver su ADN.'],

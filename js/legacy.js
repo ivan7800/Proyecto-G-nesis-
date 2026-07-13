@@ -1,5 +1,5 @@
-import { BIOMES, CONFIG } from './config.js?v=6.0.1';
-import { chance, clamp, finiteOr, uid } from './utils.js?v=6.0.1';
+import { BIOMES, CONFIG } from './config.js?v=6.0.2';
+import { chance, clamp, finiteOr, uid } from './utils.js?v=6.0.2';
 
 const DREAM_THEMES = Object.freeze([
   ['hogar', 'un hogar iluminado entre la niebla'],

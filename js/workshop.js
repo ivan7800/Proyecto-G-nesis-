@@ -1,6 +1,6 @@
-import { CONFIG } from './config.js?v=6.0.1';
-import { sanitizeCollectivePrompt } from './knowledge.js?v=6.0.1';
-import { clamp, finiteOr, rand, uid } from './utils.js?v=6.0.1';
+import { CONFIG } from './config.js?v=6.0.2';
+import { sanitizeCollectivePrompt } from './knowledge.js?v=6.0.2';
+import { clamp, finiteOr, rand, uid } from './utils.js?v=6.0.2';
 
 export const SKILLS = Object.freeze({
   cronista: { label: 'Cronista', icon: '✒', gene: 'memory', hint: 'Convierte la historia del mundo en relatos y documentación.' },

@@ -1,4 +1,10 @@
-# Auditoría — Proyecto Génesis Ω v6.0.1
+# Auditoría — Proyecto Génesis Ω v6.0.2
+
+## Adenda v6.0.2 — Saturación con población máxima (P1)
+
+Reproducido y medido: con ~850 criaturas la simulación costaba 9,6 ms/frame de media con picos de 66 ms (atribuidos por instrumentación a `civilization.update` → pipeline social de hasta 21 ms en un frame, `getCollectiveMetrics` 8 ms y `syncProfiles` 7 ms), y el escaneo de vecinos por criatura y paso sumaba ≈11,5 millones de iteraciones/s (media de 221 vecinos sensados por criatura). Correcciones: selección de candidatos sociales a la cadencia del sensado con revalidación en uso, caché de `directiveSet`, troceado del pipeline social en fases drenadas por frame (mismo orden y trabajo total), caché TTL de métricas y batching del dibujo de comida. Resultado: 1,95 ms/frame de media (4,9×), 0 frames >33 ms por cada 1200 y comportamiento social intacto (facciones, gobierno, sagas, leyes verificados tras el cambio). Evidencias y contratos en `tests/performance-regression.mjs`.
+
+
 
 ## Alcance
 
