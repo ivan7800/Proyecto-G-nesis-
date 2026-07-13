@@ -1,0 +1,38 @@
+{
+  "id": "./",
+  "name": "Proyecto Génesis Ω — Grandes Proyectos",
+  "short_name": "Génesis Ω",
+  "description": "Civilización artificial pixel art local con Grandes Proyectos, aprendizaje distribuido, legado, facciones, cultura e historia emergente.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07080b",
+  "theme_color": "#111318",
+  "orientation": "any",
+  "categories": [
+    "simulation",
+    "education",
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

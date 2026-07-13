@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b12">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Civilización artificial pixel art con Grandes Proyectos, aprendizaje distribuido, legado, política e historia emergente.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Proyecto Génesis Ω · Grandes Proyectos</title>
+  <link rel="manifest" href="manifest.webmanifest?v=6.0.1">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=6.0.1">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="omega" aria-hidden="true">Ω</div>
+      <div>
+        <p class="eyebrow">U404 · Simulación retro de vida artificial</p>
+        <h1>Proyecto Génesis <span>Ω</span></h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="saveState" class="save-state" role="status">Sistema preparado</span>
+      <button id="updateBtn" class="btn update" type="button" hidden>Actualizar</button>
+      <button id="installBtn" class="btn ghost" type="button" hidden>Instalar</button>
+      <button id="helpBtn" class="btn ghost" type="button" aria-controls="helpDialog">Guía</button>
+    </div>
+  </header>
+
+  <nav class="command-dock" aria-label="Controles principales siempre visibles">
+    <div class="command-dock__identity"><span>Ω</span><div><b>CONTROL DEL MUNDO</b><small>Bioma, memoria y archivos</small></div></div>
+    <label class="command-select"><span>Bioma</span><select id="biomeQuickSelect" aria-label="Elegir bioma visible">
+      <option value="origin">Cámara del Origen</option><option value="meadow">Prado Luminoso</option><option value="forest">Bosque Profundo</option><option value="desert">Mar de Arena</option><option value="marsh">Pantano Esmeralda</option><option value="tundra">Tundra de Cristal</option><option value="volcanic">Falla Volcánica</option><option value="abyss">Abismo Oscuro</option>
+    </select></label>
+    <div class="command-actions">
+      <button id="quickSaveBtn" class="command-btn primary" type="button"><span>◆</span><b>Guardar</b></button>
+      <button id="quickLoadBtn" class="command-btn" type="button"><span>↶</span><b>Cargar</b></button>
+      <button id="quickExportBtn" class="command-btn" type="button"><span>⇩</span><b>Exportar</b></button>
+      <label class="command-btn file-command"><span>⇧</span><b>Importar</b><input id="quickImportInput" type="file" accept="application/json,.json"></label>
+      <button id="openCollectiveBtn" class="command-btn intelligence" type="button"><span>✦</span><b>Mente Ω</b></button>
+      <button id="openGrandProjectBtn" class="command-btn grand-project" type="button"><span>⚒</span><b>Gran Proyecto</b></button>
+      <button id="openCivilizationBtn" class="command-btn civilization" type="button"><span>⌬</span><b>Civilización</b></button>
+      <button id="openLegacyBtn" class="command-btn legacy" type="button"><span>▥</span><b>Legado Ω</b></button>
+      <button id="openArchiveBtn" class="command-btn" type="button"><span>▤</span><b>Archivo</b></button>
+    </div>
+  </nav>
+
+  <main class="app-shell">
+    <section class="stage-panel glass" aria-labelledby="stageTitle">
+      <div class="stage-toolbar">
+        <div class="status-group">
+          <span id="runIndicator" class="status-dot active" aria-hidden="true"></span>
+          <strong id="runLabel">SIMULACIÓN ACTIVA</strong>
+          <span id="worldClock">Año 0 · Ciclo 1</span>
+        </div>
+        <div class="toolbar-actions" role="group" aria-label="Controles de simulación">
+          <button id="pauseBtn" class="icon-btn" type="button" title="Pausar o reanudar" aria-label="Pausar simulación">Ⅱ</button>
+          <button class="speed-btn active" type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button class="speed-btn" type="button" data-speed="4" aria-pressed="false">4×</button>
+          <button class="speed-btn" type="button" data-speed="12" aria-pressed="false">12×</button>
+          <button id="cameraZoomOutBtn" class="icon-btn camera-control" type="button" title="Alejar cámara" aria-label="Alejar cámara">−</button>
+          <output id="cameraZoomLabel" class="camera-zoom" aria-live="polite">100%</output>
+          <button id="cameraZoomInBtn" class="icon-btn camera-control" type="button" title="Acercar cámara" aria-label="Acercar cámara">+</button>
+          <button id="cameraResetBtn" class="icon-btn" type="button" title="Encajar todo el mundo" aria-label="Encajar todo el mundo">⊙</button>
+          <button id="cinemaBtn" class="icon-btn" type="button" title="Modo cinematográfico" aria-label="Activar modo cinematográfico">◉</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <h2 id="stageTitle" class="sr-only">Mundo evolutivo</h2>
+        <canvas id="worldCanvas" tabindex="0" aria-label="Mundo de criaturas digitales. Usa la rueda para ampliar, arrastra para mover la cámara y pulsa para aplicar la herramienta activa."></canvas>
+        <section id="genesisIntro" class="genesis-intro" aria-labelledby="genesisIntroTitle">
+          <div class="genesis-sigil" aria-hidden="true">Ω</div>
+          <p class="eyebrow">Protocolo de origen único</p>
+          <h2 id="genesisIntroTitle">Todo empieza con un solo huevo</h2>
+          <p>Dentro espera <strong>Ω-001</strong>. Nacerá sin recuerdos, aprenderá de ti y, si logra sobrevivir, dará origen a toda una especie.</p>
+          <div class="origin-rules"><span>1 ser inicial</span><span>Herencia real</span><span>Nacimientos por huevo</span></div>
+          <button id="startGenesisBtn" class="btn primary" type="button">Despertar a Ω-001</button>
+        </section>
+        <div id="genesisProgress" class="genesis-progress" role="status" aria-live="polite">
+          <div><span>PROTOCOLO GÉNESIS</span><b id="genesisPhase">Huevo primordial</b></div>
+          <div class="genesis-meter" aria-hidden="true"><span id="genesisProgressFill"></span></div>
+          <small id="genesisHint">Activa el protocolo para despertar a Ω-001.</small>
+        </div>
+        <div class="world-overlay top-left">
+          <span id="biomeLabel">BIOMA: CÁMARA DEL ORIGEN</span>
+          <span id="climateLabel">18.0 °C · ESTABLE</span>
+        </div>
+        <div class="world-overlay bottom-left">
+          <span>Rueda o pellizco: zoom</span><span>Arrastrar: cámara</span><span>0/R: ver todo</span>
+        </div>
+        <div class="tool-status" aria-live="polite">
+          <span>HERRAMIENTA</span>
+          <b id="activeToolLabel">Inspeccionar</b>
+          <small id="toolHint">Pulsa sobre una criatura para ver su ADN.</small>
+        </div>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <aside class="control-column">
+      <section class="glass metrics-panel" aria-labelledby="metricsTitle">
+        <div class="section-heading">
+          <div><p class="eyebrow">Telemetría viva</p><h2 id="metricsTitle">Estado del ecosistema</h2></div>
+          <span id="healthBadge" class="badge good">ESTABLE</span>
+        </div>
+        <div class="metric-grid">
+          <article><span>Población</span><strong id="populationMetric">0</strong><small id="populationDelta">seres vivos</small></article>
+          <article><span>Huevos</span><strong id="eggMetric">1</strong><small>gestaciones activas</small></article>
+          <article><span>Generación</span><strong id="generationMetric">0</strong><small>máxima observada</small></article>
+          <article><span>Diversidad</span><strong id="diversityMetric">0%</strong><small>distancia genética</small></article>
+        </div>
+        <canvas id="populationChart" class="chart" height="110" aria-label="Gráfico de población"></canvas>
+      </section>
+
+      <section class="glass tabs-panel">
+        <div class="tabs" role="tablist" aria-label="Paneles del laboratorio">
+          <button class="tab active" id="tabButton-god" type="button" data-tab="god" role="tab" aria-controls="tab-god" aria-selected="true">Dios</button>
+          <button class="tab" id="tabButton-code" type="button" data-tab="code" role="tab" aria-controls="tab-code" aria-selected="false" tabindex="-1">Código Ω</button>
+          <button class="tab" id="tabButton-science" type="button" data-tab="science" role="tab" aria-controls="tab-science" aria-selected="false" tabindex="-1">Ciencia</button>
+          <button class="tab" id="tabButton-taller" type="button" data-tab="taller" role="tab" aria-controls="tab-taller" aria-selected="false" tabindex="-1">Taller <span id="obraBadge" class="obra-badge" hidden>0</span></button>
+          <button class="tab" id="tabButton-collective" type="button" data-tab="collective" role="tab" aria-controls="tab-collective" aria-selected="false" tabindex="-1">Mente Ω <span id="collectiveBadge" class="obra-badge" hidden>0</span></button>
+          <button class="tab" id="tabButton-grandproject" type="button" data-tab="grandproject" role="tab" aria-controls="tab-grandproject" aria-selected="false" tabindex="-1">Gran Proyecto <span id="grandProjectBadge" class="obra-badge" hidden>0</span></button>
+          <button class="tab" id="tabButton-civilization" type="button" data-tab="civilization" role="tab" aria-controls="tab-civilization" aria-selected="false" tabindex="-1">Civilización</button>
+          <button class="tab" id="tabButton-legacy" type="button" data-tab="legacy" role="tab" aria-controls="tab-legacy" aria-selected="false" tabindex="-1">Legado Ω</button>
+          <button class="tab" id="tabButton-archive" type="button" data-tab="archive" role="tab" aria-controls="tab-archive" aria-selected="false" tabindex="-1">Archivo</button>
+        </div>
+
+        <div id="tab-god" class="tab-content active" role="tabpanel" aria-labelledby="tabButton-god">
+          <div class="tool-grid">
+            <button class="tool-btn active" type="button" data-tool="inspect" aria-pressed="true"><span>⌖</span><b>Inspeccionar</b><small>Selecciona organismos</small></button>
+            <button class="tool-btn" type="button" data-tool="food" aria-pressed="false"><span>✦</span><b>Sembrar energía</b><small>Añade recursos</small></button>
+            <button class="tool-btn" type="button" data-tool="spawn" aria-pressed="false"><span>◌</span><b>Crear vida</b><small>Nuevo linaje</small></button>
+            <button class="tool-btn" type="button" data-tool="radiation" aria-pressed="false"><span>☢</span><b>Radiación</b><small>Eleva mutaciones</small></button>
+            <button class="tool-btn" type="button" data-tool="meteor" aria-pressed="false"><span>◆</span><b>Meteorito</b><small>Extinción local</small></button>
+            <button class="tool-btn" type="button" data-tool="sanctuary" aria-pressed="false"><span>◈</span><b>Santuario</b><small>Zona fértil</small></button>
+          </div>
+          <section class="environment-panel" aria-labelledby="environmentTitle">
+            <div class="environment-heading">
+              <div><p class="eyebrow">Mundo vivo</p><h3 id="environmentTitle">Bioma y libertad</h3></div>
+              <span id="biomeIcon" class="biome-icon" aria-hidden="true">Ω</span>
+            </div>
+            <label class="select-row">Fondo y ecosistema
+              <select id="biomeSelect">
+                <option value="origin">Cámara del Origen</option>
+                <option value="meadow">Prado Luminoso</option>
+                <option value="forest">Bosque Profundo</option>
+                <option value="desert">Mar de Arena</option>
+                <option value="marsh">Pantano Esmeralda</option>
+                <option value="tundra">Tundra de Cristal</option>
+                <option value="volcanic">Falla Volcánica</option>
+                <option value="abyss">Abismo Oscuro</option>
+              </select>
+            </label>
+            <p id="biomeDescription" class="panel-copy biome-description">Entorno equilibrado y estable para el nacimiento del linaje.</p>
+            <label class="switch-row"><span><b>Ciclo automático de biomas</b><small>El entorno cambia por sí solo con el paso de los años.</small></span><input id="autoBiomeToggle" type="checkbox" role="switch"></label>
+            <label class="range-row">Libertad conductual <output id="autonomyOutput">90%</output>
+              <input id="autonomyRange" type="range" min="25" max="100" step="1" value="90">
+            </label>
+            <small class="privacy-note">Las reglas enseñadas son preferencias aprendidas. Cada ser conserva decisiones propias según carácter, memoria, necesidades y vínculos.</small>
+          </section>
+          <label class="range-row">Mutación ambiental <output id="mutationOutput">1.0×</output>
+            <input id="mutationRange" type="range" min="0.2" max="8" step="0.1" value="1">
+          </label>
+          <label class="range-row">Abundancia de alimento <output id="foodOutput">1.0×</output>
+            <input id="foodRange" type="range" min="0.25" max="3" step="0.05" value="1">
+          </label>
+          <div class="button-row">
+            <button id="pulseBtn" class="btn primary" type="button">Pulso evolutivo</button>
+            <button id="resetBtn" class="btn danger" type="button">Reiniciar mundo</button>
+          </div>
+        </div>
+
+        <div id="tab-code" class="tab-content" role="tabpanel" aria-labelledby="tabButton-code" hidden>
+          <div class="section-heading compact">
+            <div><p class="eyebrow">Incubadora genética</p><h2>Programa un linaje</h2></div>
+            <span class="badge good">ADN EDITABLE</span>
+          </div>
+          <p class="panel-copy">Define sus tendencias. Después pulsa <b>Armar huevo</b> y colócalo en el mundo. La nueva vida tendrá que eclosionar.</p>
+          <label class="select-row">Arquetipo inicial
+            <select id="profileSelect">
+              <option value="explorer">Explorador</option>
+              <option value="cooperative">Cooperativo</option>
+              <option value="survivor">Superviviente</option>
+              <option value="predator">Depredador</option>
+              <option value="balanced">Equilibrado</option>
+            </select>
+          </label>
+          <div class="program-grid">
+            <label>Velocidad <output id="progSpeedOut">1.20</output><input id="progSpeed" type="range" min="0.45" max="2.4" step="0.05" value="1.2"></label>
+            <label>Visión <output id="progVisionOut">150</output><input id="progVision" type="range" min="55" max="260" step="5" value="150"></label>
+            <label>Sociabilidad <output id="progSocialOut">0.60</output><input id="progSocial" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+            <label>Curiosidad <output id="progCuriosityOut">0.75</output><input id="progCuriosity" type="range" min="0" max="1" step="0.05" value="0.75"></label>
+            <label>Agresividad <output id="progAggressionOut">0.20</output><input id="progAggression" type="range" min="0" max="1" step="0.05" value="0.2"></label>
+            <label>Eficiencia <output id="progEfficiencyOut">1.10</output><input id="progEfficiency" type="range" min="0.35" max="1.6" step="0.05" value="1.1"></label>
+          </div>
+          <div class="program-preview">
+            <span id="programOrb" aria-hidden="true"></span>
+            <div><b id="programName">Linaje Explorador</b><small id="programNote">Explora, recuerda e imita rutas fértiles.</small></div>
+          </div>
+          <button id="armLineageBtn" class="btn primary full" type="button">Armar huevo y colocarlo</button>
+        </div>
+
+        <div id="tab-science" class="tab-content" role="tabpanel" aria-labelledby="tabButton-science" hidden>
+          <div id="selectionEmpty" class="empty-state">
+            <div aria-hidden="true">⌁</div><strong>Ningún organismo seleccionado</strong><p>Activa Inspeccionar y pulsa sobre una criatura. Los huevos muestran su progreso al tocarlos.</p>
+          </div>
+          <div id="creatureInspector" class="inspector" hidden>
+            <div class="creature-title">
+              <canvas id="creaturePortrait" width="72" height="72" aria-label="Retrato de la criatura seleccionada"></canvas>
+              <div><h3 id="creatureName">Entidad</h3><p id="creatureMeta">—</p></div>
+            </div>
+            <div class="energy-bar" aria-label="Energía"><span id="energyFill"></span></div>
+            <div class="mind-grid" aria-label="Estado cognitivo">
+              <article><span>Personalidad</span><b id="personalityValue">—</b></article>
+              <article><span>Vínculo</span><b id="bondValue">0%</b></article>
+              <article><span>Aprendizajes</span><b id="knowledgeValue">0</b></article>
+              <article><span>Ánimo</span><b id="moodValue">—</b></article>
+              <article><span>Objetivo propio</span><b id="goalValue">—</b></article>
+              <article><span>Autonomía</span><b id="autonomyValue">0%</b></article>
+              <article><span>Facción</span><b id="factionValue">Sin afiliación</b></article>
+              <article><span>Rango social</span><b id="socialRankValue">Habitante</b></article>
+              <article><span>Lealtad</span><b id="loyaltyValue">—</b></article>
+              <article><span>Vocación</span><b id="callingValue">—</b></article>
+              <article><span>Meta vital</span><b id="lifeGoalValue">—</b></article>
+              <article><span>Esperanza</span><b id="hopeValue">—</b></article>
+              <article><span>Miedo</span><b id="fearValue">—</b></article>
+              <article><span>Heridas emocionales</span><b id="traumaValue">0</b></article>
+            </div>
+            <div class="cognition-panel">
+              <div class="cognition-heading"><div><p class="eyebrow">Canal cognitivo</p><h4>Habla y enseña</h4></div><span id="speechSupport" class="mini-status">LOCAL</span></div>
+              <div id="cognitionLog" class="cognition-log" role="log" aria-live="polite"></div>
+              <form id="teachForm" class="teach-form">
+                <label class="sr-only" for="teachInput">Mensaje o instrucción para la criatura</label>
+                <input id="teachInput" maxlength="240" autocomplete="off" placeholder="Ej.: no ataques, busca alimento, recuerda que…">
+                <button id="teachBtn" class="btn primary" type="submit">Enseñar</button>
+              </form>
+              <div class="voice-actions">
+                <button id="listenBtn" class="btn ghost" type="button">🎙 Escucharme</button>
+                <button id="speakBtn" class="btn ghost" type="button">🔊 Responder</button>
+              </div>
+              <label class="switch-row compact"><span><b>Voz autónoma</b><small>La criatura seleccionada verbaliza descubrimientos y decisiones relevantes.</small></span><input id="autoSpeakToggle" type="checkbox" role="switch"></label>
+              <div class="setting-row">
+                <label for="volumeSlider"><b>Volumen</b> <small>Voz e himnos</small></label>
+                <div class="slider-line">
+                  <span aria-hidden="true">🔈</span>
+                  <input id="volumeSlider" type="range" min="0" max="100" step="1" value="80" aria-label="Volumen general">
+                  <output id="volumeLabel" aria-live="polite">80%</output>
+                </div>
+              </div>
+              <div class="setting-row">
+                <label for="qualitySelect"><b>Calidad gráfica</b> <small>Ayuda con muchos seres</small></label>
+                <select id="qualitySelect" class="quality-select" aria-label="Calidad gráfica">
+                  <option value="auto">Automática (recomendado)</option>
+                  <option value="alta">Alta — detalle máximo</option>
+                  <option value="rendimiento">Rendimiento — pixelado y fluido</option>
+                </select>
+              </div>
+              <small class="privacy-note">El micrófono solo se activa al pulsar. La memoria y las reglas se guardan localmente.</small>
+            </div>
+            <div class="knowledge-panel">
+              <div class="knowledge-heading"><b>Memoria aprendida</b><small>Se transmite parcialmente entre generaciones</small></div>
+              <ul id="knowledgeList" class="knowledge-list"></ul>
+            </div>
+            <div id="geneList" class="gene-list"></div>
+            <button id="followBtn" class="btn primary full" type="button">Seguir organismo</button>
+          </div>
+        </div>
+
+        <div id="tab-taller" class="tab-content" role="tabpanel" aria-labelledby="tabButton-taller" hidden>
+          <h2 class="panel-title">Taller colectivo</h2>
+          <p class="panel-copy">Cada adulto desarrolla una especialidad. Las células de trabajo combinan hasta doce oficios y crean obras culturales o encargos reales: código HTML, recetas, mejoras, ayuda, investigaciones, manuales, inventos y planes descargables.</p>
+          <p id="workshopStatus" class="panel-copy subtle" aria-live="polite">Sin equipos activos por ahora.</p>
+          <div id="obraList" class="obra-list" aria-live="polite"></div>
+          <p id="obraEmpty" class="panel-copy subtle">Aún no hay obras terminadas. Deja crecer al linaje: cuando varios adultos sociables coincidan, colaborarán solos.</p>
+          <button id="deliverAllBtn" class="btn primary full" type="button" disabled>Entregar Códice Ω completo</button>
+        </div>
+
+        <div id="tab-collective" class="tab-content" role="tabpanel" aria-labelledby="tabButton-collective" hidden>
+          <div class="collective-hero">
+            <div><p class="eyebrow">Red cognitiva distribuida</p><h2>Mente Colectiva Ω</h2><p>El conocimiento se reparte entre especialistas y se combina en equipos. Es una simulación local de inteligencia colectiva: no es una AGI real ni conoce Internet por sí sola.</p></div>
+            <div class="collective-core"><span>ÍNDICE Ω</span><strong id="collectiveIndex">0</strong><small>métrica interna, no coeficiente intelectual</small></div>
+          </div>
+          <div class="collective-metrics">
+            <article><span>Cápsulas únicas</span><b id="collectiveKnowledge">0</b><small>memoria compartida</small></article>
+            <article><span>Oficios activos</span><b id="collectiveRoles">0</b><small>especialización</small></article>
+            <article><span>Sinergia</span><b id="collectiveSynergy">0%</b><small>cooperación efectiva</small></article>
+            <article><span>Cola</span><b id="collectiveQueue">0</b><small>encargos pendientes</small></article>
+          </div>
+          <section class="atlas-panel">
+            <div><p class="eyebrow">Biblioteca segura incorporada</p><h3>Atlas Ω de conocimiento</h3><p id="collectiveStatus" class="panel-copy">60 cápsulas fundacionales en lógica, matemáticas, programación, datos, biología, cocina, ingeniería, diseño, comunicación, organización, creatividad y seguridad.</p></div>
+            <button id="injectAtlasBtn" class="btn primary premium-action" type="button">✦ Sincronizar Atlas con toda la especie</button>
+          </section>
+          <section class="collective-order">
+            <div class="section-heading compact"><div><p class="eyebrow">Encargo dirigido</p><h2>¿Qué quieres que creen juntos?</h2></div><span class="badge good">LOCAL</span></div>
+            <label class="select-row">Tipo de proyecto<select id="collectiveProjectType">
+              <option value="codigo">Código / aplicación HTML</option><option value="receta">Receta adaptable</option><option value="mejora">Propuesta de mejora</option><option value="ayuda">Guía de ayuda</option><option value="investigacion">Investigación</option><option value="manual">Manual práctico</option><option value="invento">Concepto de invento</option><option value="plan">Plan de acción</option>
+            </select></label>
+            <label class="collective-prompt">Describe el encargo<textarea id="collectivePrompt" maxlength="220" rows="4" placeholder="Ej.: crea una app local para organizar tareas, una receta con arroz y verduras, o un plan para mejorar el ecosistema"></textarea></label>
+            <button id="collectiveProjectBtn" class="btn primary full premium-action" type="button">Encargar proyecto a la mente colectiva</button>
+            <small class="privacy-note">Los proyectos se generan mediante reglas, plantillas y memoria local. Para conocimiento actual, razonamiento avanzado o resultados profesionales sería necesaria una IA externa opcional y supervisión humana.</small>
+          </section>
+          <div id="collectiveProjectsList" class="collective-projects" aria-live="polite"></div>
+        </div>
+
+        <div id="tab-grandproject" class="tab-content" role="tabpanel" aria-labelledby="tabButton-grandproject" hidden>
+          <section class="grand-project-hero">
+            <div><p class="eyebrow">Una civilización, un objetivo complejo</p><h2>Gran Proyecto Ω</h2><p>Plantea un desafío. La Mente Ω lo divide en fases, reúne especialistas, detecta carencias, investiga, construye, falla, aprende, verifica y prepara un dossier exportable.</p></div>
+            <div class="grand-project-core"><span>CAPACIDAD ACTIVA</span><strong id="grandProjectActiveCount">0</strong><small>proyectos en curso o espera</small></div>
+          </section>
+          <div class="grand-project-metrics">
+            <article><span>Terminados</span><b id="grandProjectCompletedCount">0</b><small>entregas verificadas</small></article>
+            <article><span>Tareas</span><b id="grandProjectTasksCount">0/0</b><small>hitos completados</small></article>
+            <article><span>Calidad media</span><b id="grandProjectQuality">0%</b><small>métrica interna</small></article>
+            <article><span>Fuentes externas</span><b id="grandProjectExternalCount">0</b><small>ideas revisadas</small></article>
+          </div>
+          <section class="grand-project-create">
+            <div class="section-heading compact"><div><p class="eyebrow">Mandato del Observador</p><h3>Iniciar un objetivo grande</h3></div><span class="badge good">TRAZABLE</span></div>
+            <div class="grand-project-form-grid">
+              <label class="select-row">Tipo<select id="grandProjectType">
+                <option value="software">Software o aplicación</option><option value="game">Videojuego</option><option value="city">Ciudad autosuficiente</option><option value="research">Investigación</option><option value="invention">Invención</option><option value="book">Libro o historia</option><option value="observatory">Observatorio científico</option><option value="world_cure">Cura del mundo simulado</option><option value="custom">Desafío libre</option>
+              </select></label>
+              <label class="collective-prompt">Nombre opcional<input id="grandProjectTitle" maxlength="90" placeholder="Ej.: Archivo Vivo 404"></label>
+            </div>
+            <label class="collective-prompt">Objetivo<textarea id="grandProjectBrief" maxlength="900" rows="4" placeholder="Ej.: cread una aplicación local para organizar una biblioteca, con búsqueda, etiquetas, copias de seguridad, accesibilidad y pruebas"></textarea></label>
+            <label class="collective-prompt">Restricciones y prioridades<textarea id="grandProjectConstraints" maxlength="600" rows="3" placeholder="Ej.: debe funcionar offline, ser ligera, segura, móvil y exportable"></textarea></label>
+            <button id="grandProjectCreateBtn" class="btn primary full premium-action" type="button">⚒ Convocar a toda la civilización</button>
+            <small class="privacy-note">La autonomía es simulada y auditable. Offline puede organizar, combinar el Atlas Ω y crear planes o prototipos estructurados. Para datos actuales o conocimiento especializado necesita fuentes externas revisadas por ti.</small>
+          </section>
+          <div class="grand-project-layout">
+            <section class="grand-project-list-panel">
+              <div class="section-heading compact"><div><p class="eyebrow">Consejo de proyectos</p><h3>Mandatos activos e históricos</h3></div></div>
+              <div id="grandProjectList" class="grand-project-list" aria-live="polite"></div>
+            </section>
+            <section class="grand-project-detail-panel">
+              <div id="grandProjectEmpty" class="empty-state"><div>⚒</div><strong>Ningún proyecto seleccionado</strong><p>Crea un objetivo o selecciona uno para consultar equipos, tareas, fallos, aprendizajes y entregas.</p></div>
+              <div id="grandProjectDetail" hidden>
+                <div class="grand-project-detail-head"><div><p id="grandProjectDetailType" class="eyebrow">GRAN PROYECTO</p><h3 id="grandProjectDetailTitle">Sin título</h3><p id="grandProjectDetailBrief" class="panel-copy"></p></div><span id="grandProjectStatus" class="badge">ACTIVO</span></div>
+                <div class="grand-project-progress"><div><span>PROGRESO</span><b id="grandProjectProgressLabel">0%</b></div><div class="grand-project-progress-bar"><span id="grandProjectProgressFill"></span></div><small id="grandProjectLastEvent">Esperando actividad.</small></div>
+                <div class="grand-project-controls">
+                  <button id="grandProjectPauseBtn" class="btn ghost" type="button">Pausar</button>
+                  <button id="grandProjectDossierBtn" class="btn primary" type="button">⇩ Exportar dossier</button>
+                  <button id="grandProjectContextBtn" class="btn ghost" type="button">⇩ Contexto para IA</button>
+                  <button id="grandProjectCancelBtn" class="btn subtle-danger" type="button">Archivar</button>
+                </div>
+                <div class="grand-project-columns">
+                  <article><h4>Fases y tareas</h4><div id="grandProjectTaskList" class="grand-project-task-list"></div></article>
+                  <article><h4>Bloqueos y aprendizajes</h4><div id="grandProjectLearningList" class="grand-project-learning-list"></div></article>
+                </div>
+                <section class="grand-project-oracle">
+                  <div class="section-heading compact"><div><p class="eyebrow">Investigación opcional</p><h4>Aportación externa revisada</h4></div><span class="badge warn">HUMANO EN EL BUCLE</span></div>
+                  <textarea id="grandProjectExternalInput" maxlength="2400" rows="5" placeholder="Pega aquí únicamente información que hayas leído y aceptado. Se añadirá con trazabilidad, nunca se ejecutará como código."></textarea>
+                  <button id="grandProjectIntegrateBtn" class="btn ghost full" type="button">Integrar conocimiento revisado</button>
+                </section>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div id="tab-civilization" class="tab-content" role="tabpanel" aria-labelledby="tabButton-civilization" hidden>
+          <div class="civilization-hero">
+            <div><p class="eyebrow">Evolución social persistente</p><h2>Civilización emergente</h2><p id="civilizationEraCopy">El linaje todavía está descubriendo cómo sobrevivir y compartir memoria.</p></div>
+            <div class="era-core"><span>ERA ACTUAL</span><strong id="civilizationEra">Origen</strong><small>avanza por logros reales, no por tiempo automático</small></div>
+          </div>
+          <div class="civilization-metrics">
+            <article><span>Tecnologías</span><b id="civilizationTechCount">0</b><small>desbloqueadas por requisitos</small></article>
+            <article><span>Instituciones</span><b id="civilizationInstitutionCount">0</b><small>estructuras sociales</small></article>
+            <article><span>Idioma</span><b id="civilizationWords">0</b><small>palabras propias</small></article>
+            <article><span>Prosperidad</span><b id="civilizationProsperity">0%</b><small>energía, recursos y obras</small></article>
+            <article><span>Cooperación</span><b id="civilizationCooperation">0%</b><small>sinergia entre individuos</small></article>
+            <article><span>Estabilidad</span><b id="civilizationStability">0%</b><small>resiliencia del mundo</small></article>
+            <article><span>Facciones</span><b id="societyFactionCount">0</b><small>grupos con ideología propia</small></article>
+            <article><span>Tratados</span><b id="societyTreatyCount">0</b><small>alianzas, comercio y paz</small></article>
+            <article><span>Guerras</span><b id="societyWarCount">0</b><small>conflictos activos</small></article>
+          </div>
+          <section class="civilization-grid">
+            <article class="civilization-card technology-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Árbol de progreso</p><h3>Tecnología</h3></div><span class="badge good">EMERGENTE</span></div>
+              <p id="civilizationNextTech" class="panel-copy">La primera tecnología aparecerá cuando exista suficiente población, conocimiento y cooperación.</p>
+              <div id="civilizationTechList" class="civilization-list"></div>
+            </article>
+            <article class="civilization-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Organización común</p><h3>Instituciones</h3></div></div>
+              <div id="civilizationInstitutionList" class="civilization-list"></div>
+            </article>
+            <article class="civilization-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Identidad compartida</p><h3>Cultura y valores</h3></div></div>
+              <div id="civilizationCultureList" class="civilization-list"></div>
+            </article>
+            <article class="civilization-card language-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Lenguaje vivo</p><h3 id="civilizationLanguageName">Habla del Origen</h3></div><span id="civilizationGrammar" class="badge">NIVEL 0</span></div>
+              <div id="civilizationLexicon" class="lexicon-grid"></div>
+            </article>
+          </section>
+
+          <section class="society-command-grid" aria-label="Sociedad y política emergente">
+            <article class="civilization-card government-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Poder y legitimidad</p><h3 id="societyGovernment">Círculo de Linajes</h3></div><span id="societyLegitimacy" class="badge">50%</span></div>
+              <div class="government-ruler"><span>Gobernante actual</span><strong id="societyRuler">Sin designar</strong><small id="societySuccession">Sucesión por mérito y memoria</small></div>
+              <div id="societyLawList" class="civilization-list compact-list"></div>
+            </article>
+            <article class="civilization-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Ideas, intereses y lealtades</p><h3>Facciones</h3></div><span id="societyUnrest" class="badge warn">0% tensión</span></div>
+              <div id="societyFactionList" class="faction-list"></div>
+            </article>
+            <article class="civilization-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Pactos, rivalidades y guerras</p><h3>Diplomacia</h3></div></div>
+              <div id="societyDiplomacyList" class="civilization-list"></div>
+            </article>
+            <article class="civilization-card saga-card">
+              <div class="section-heading compact"><div><p class="eyebrow">Relatos nacidos del sistema</p><h3>Sagas y traiciones</h3></div><span id="societyBetrayals" class="badge danger">0 traiciones</span></div>
+              <div id="societySagaList" class="saga-list"></div>
+            </article>
+          </section>
+
+          <section class="oracle-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Puente opcional y controlado</p><h2>Oráculo externo</h2></div><span class="badge warn">REVISIÓN HUMANA</span></div>
+            <p class="panel-copy">La app no envía datos ni guarda claves. Exporta un paquete de contexto para consultarlo manualmente en ChatGPT, Claude o Gemini. Después puedes pegar aquí una respuesta que hayas revisado y aceptado.</p>
+            <label class="collective-prompt">Pregunta para la IA externa<textarea id="oracleQuestion" maxlength="500" rows="3" placeholder="Ej.: ¿qué avance seguro ayudaría a esta civilización a gestionar mejor sus recursos?"></textarea></label>
+            <button id="exportOracleBtn" class="btn ghost full" type="button">⇩ Exportar paquete de contexto</button>
+            <label class="collective-prompt">Respuesta revisada<textarea id="oracleResponse" maxlength="1800" rows="5" placeholder="Pega únicamente una respuesta que hayas leído y consideres segura y útil."></textarea></label>
+            <button id="integrateOracleBtn" class="btn primary full premium-action" type="button">✦ Integrar sabiduría validada</button>
+            <small id="oracleStatus" class="privacy-note">Nada se conecta automáticamente a Internet. La integración queda registrada en la crónica.</small>
+          </section>
+          <section class="chronicle-panel">
+            <div class="section-heading compact"><div><p class="eyebrow">Historia irreversible</p><h2>Crónica de la especie</h2></div></div>
+            <ol id="civilizationChronicle" class="civilization-chronicle"></ol>
+          </section>
+        </div>
+
+        <div id="tab-legacy" class="tab-content" role="tabpanel" aria-labelledby="tabButton-legacy" hidden>
+          <section class="legacy-hero">
+            <div><p class="eyebrow">Memoria que sobrevive a cada individuo</p><h2>Legado Ω</h2><p>Los seres sueñan, sufren pérdidas, difunden rumores, escriben libros y dejan reliquias. Con el paso de las generaciones, los hechos pueden convertirse en mitos.</p></div>
+            <div class="legacy-atmosphere"><span id="legacyPhase">AMANECER</span><strong id="legacyWeather">Cielo quieto</strong><small>clima y ciclo visual de bajo consumo</small></div>
+          </section>
+          <div class="legacy-metrics">
+            <article><span>Sueños</span><b id="legacyDreamCount">0</b><small>recuerdos nocturnos</small></article>
+            <article><span>Libros</span><b id="legacyBookCount">0</b><small>obras persistentes</small></article>
+            <article><span>Ruinas</span><b id="legacyRuinCount">0</b><small>lugares con historia</small></article>
+            <article><span>Mitos</span><b id="legacyMythCount">0</b><small>verdades deformadas</small></article>
+            <article><span>Bibliotecas</span><b id="legacyLibraryCount">0</b><small>memoria protegida</small></article>
+            <article><span>Síntesis</span><b id="legacyInsightCount">0</b><small>inteligencia distribuida</small></article>
+          </div>
+          <section class="legacy-grid">
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Psicología nocturna</p><h3>Sueños y presagios</h3></div></div><div id="legacyDreamList" class="legacy-list"></div></article>
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Información imperfecta</p><h3>Rumores</h3></div></div><div id="legacyRumorList" class="legacy-list"></div></article>
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Conocimiento escrito</p><h3>Libros y bibliotecas</h3></div></div><div id="legacyBookList" class="legacy-list"></div></article>
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Mundo arqueológico</p><h3>Ruinas y reliquias</h3></div></div><div id="legacyRuinList" class="legacy-list"></div></article>
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Muchos oficios, una idea</p><h3>Síntesis colectivas</h3></div></div><div id="legacyInsightList" class="legacy-list"></div></article>
+            <article class="legacy-card"><div class="section-heading compact"><div><p class="eyebrow">Después de la muerte</p><h3>Vidas recordadas</h3></div></div><div id="legacyLegaciesList" class="legacy-list"></div></article>
+          </section>
+        </div>
+
+        <div id="tab-archive" class="tab-content" role="tabpanel" aria-labelledby="tabButton-archive" hidden>
+          <h2 class="panel-title">Archivo y guardado</h2>
+          <div class="archive-actions">
+            <button id="saveBtn" class="btn primary full" type="button">💾 Guardar instantánea</button>
+            <button id="loadBtn" class="btn ghost full" type="button">📂 Cargar último mundo</button>
+            <button id="downloadAllSavesBtn" class="btn ghost full" type="button" disabled>⬇️ Descargar todos los guardados (JSON)</button>
+            <button id="exportBtn" class="btn ghost full" type="button">📤 Exportar mundo actual JSON</button>
+            <label class="btn ghost full file-label">📥 Importar mundo JSON<input id="importInput" type="file" accept="application/json,.json"></label>
+            <button id="clearSaveBtn" class="btn subtle-danger full" type="button">🗑️ Borrar instantánea local</button>
+          </div>
+          <div class="saves-section">
+            <h3>Instantáneas guardadas (últimas 5)</h3>
+            <div id="savesList" class="saves-list" aria-live="polite"></div>
+            <p class="panel-copy subtle">Cada guardado manual crea una instantánea fechada (máximo 5), además del último autoguardado. El guardado automático ocurre cada 45 segundos.</p>
+          </div>
+          <div id="statsPanel" class="stats-section"></div>
+          <div class="timeline-wrap">
+            <h3>Registro evolutivo</h3>
+            <ol id="timeline" class="timeline"></ol>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <span>PROYECTO GÉNESIS Ω · <span id="appVersion">v6.0.1</span> · Grandes Proyectos</span>
+    <span id="fpsMetric">60 FPS</span>
+  </footer>
+
+  <button id="cinemaExitBtn" class="cinema-exit" type="button" hidden aria-label="Salir del modo cinematográfico">Salir del modo cine</button>
+
+  <dialog id="helpDialog" class="help-dialog">
+    <form method="dialog">
+      <button class="dialog-close" aria-label="Cerrar">×</button>
+      <p class="eyebrow">Protocolo de observación</p>
+      <h2>Cómo nace la evolución</h2>
+      <p>Todo comienza con Ω-001. Si sobrevive, generará el primer huevo descendiente; después la especie crecerá mediante reproducción, herencia y mutación. Los descendientes mezclan genes y sufren mutaciones, por lo que la población cambia sin que sus resultados estén prediseñados.</p>
+      <div class="help-grid">
+        <article><b>Origen único</b><span>La población no aparece de golpe: nace de un único ser fundador.</span></article>
+        <article><b>Especiación</b><span>Una mutación suficientemente distante crea una especie nueva.</span></article>
+        <article><b>Memoria y voz</b><span>Las entidades recuerdan, aceptan reglas, hablan y pueden escuchar cuando el navegador lo permite.</span></article>
+        <article><b>Intervención</b><span>Elige una herramienta y después pulsa sobre el mundo.</span></article><article><b>Mente colectiva</b><span>Cada ser tiene un oficio; los equipos combinan memoria y especialidades.</span></article><article><b>Gran Proyecto</b><span>Entrega un objetivo complejo y observa cómo lo dividen, investigan, construyen, prueban y documentan.</span></article><article><b>Civilización</b><span>Los logros desbloquean tecnología, idioma, valores, instituciones y una historia propia persistente.</span></article>
+      </div>
+      <button class="btn primary full">Entrar al laboratorio</button>
+    </form>
+  </dialog>
+
+  <section id="bootError" class="boot-error" role="alert" hidden>
+    <div>
+      <span class="error-omega">Ω</span>
+      <p class="eyebrow">Protocolo de recuperación</p>
+      <h2>No se pudo iniciar el laboratorio</h2>
+      <p id="bootErrorMessage">Se produjo un error inesperado.</p>
+      <button id="bootReloadBtn" class="btn primary" type="button">Recargar aplicación</button>
+      <small>Si acabas de actualizar desde una versión anterior, borra una vez los datos del sitio para eliminar la caché antigua.</small>
+    </div>
+  </section>
+
+  <noscript>Proyecto Génesis Ω necesita JavaScript para ejecutar la simulación.</noscript>
+  <script defer src="js/app.bundle.js?v=6.0.1"></script>
+</body>
+</html>
